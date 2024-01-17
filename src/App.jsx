@@ -9,9 +9,7 @@ function App () {
   return (
     <>
       <div>Cuongpc</div>
-
-      <Typography variant='body2' color="text.secondary">Test Typography</Typography>
-
+      <Typography variant='body2' color="text.secondary">Test</Typography>
       <Button variant='text'>Text</Button>
       <Button variant='contained'>Contained</Button>
       <Button variant='outlined'>Outlined</Button>
