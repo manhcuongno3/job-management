@@ -9,7 +9,6 @@ import IconButton from '@mui/material/IconButton'
 import PersonAdd from '@mui/icons-material/PersonAdd'
 import Settings from '@mui/icons-material/Settings'
 import Logout from '@mui/icons-material/Logout'
-import avatarCuongpc from '~/assets/anhcv.jpg'
 
 function Profiles () {
   const [anchorEl, setAnchorEl] = React.useState(null)
@@ -28,14 +27,13 @@ function Profiles () {
             onClick={handleClick}
             size='small'
             sx={{ padding: 0 }}
-            aria-controls={open ? 'account-menu-profiles' : undefined}
+            aria-controls={open ? 'basic-menu-profiles' : undefined}
             aria-haspopup='true'
             aria-expanded={open ? 'true' : undefined}
           >
             <Avatar
-              sx={{ width: 30, height: 30 }}
-              src={avatarCuongpc}
-              // src='https://cdn.iconscout.com/icon/free/png-512/free-avatar-370-456322.png?f=webp&w=256'
+              sx={{ width: 34, height: 34 }}
+              src='https://cdn-icons-png.flaticon.com/128/2202/2202112.png'
               alt='Cuongpc'
             />
           </IconButton>
