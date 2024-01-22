@@ -1,7 +1,13 @@
 import Box from '@mui/system/Box'
 import ListColumns from './ListColumns/ListColumns'
+import { mapOrder } from '~/utils/sorts'
 
-function BoardContent () {
+function BoardContent ({ board }) {
+  const orderedColumn = mapOrder(
+    board?.columns,
+    board?.columnOrderIds,
+    '_id'
+  )
   return (
     <Box
       sx={{
@@ -12,7 +18,7 @@ function BoardContent () {
         p: '10px 0'
       }}
     >
-      <ListColumns />
+      <ListColumns columns={orderedColumn} />
     </Box>
   )
 }
