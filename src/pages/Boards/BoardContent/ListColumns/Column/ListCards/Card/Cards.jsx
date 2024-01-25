@@ -7,6 +7,8 @@ import CommentIcon from '@mui/icons-material/Comment'
 import AttachmentIcon from '@mui/icons-material/Attachment'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 function Cards ({ card }) {
   const shoudShowCardActions = () => {
@@ -16,8 +18,30 @@ function Cards ({ card }) {
       !!card?.attachments.length
     )
   }
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: card._id, data: { ...card } })
+
+  const dndKitColumnStyle = {
+    touchAction: 'none',
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+    border: isDragging ? '1px solid #74b9ff' : undefined
+
+  }
   return (
     <Card
+      ref={setNodeRef}
+      style={dndKitColumnStyle}
+      {...attributes}
+      {...listeners}
       sx={{
         cursor: 'pointer',
         boxShadow: '0 1px 1px rgba(0,0,0,0.2)',
