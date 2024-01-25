@@ -32,127 +32,138 @@ function Column ({ column }) {
   }
 
   const orderedCard = mapOrder(column?.cards, column?.cardOrderIds, '_id')
-
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: column._id, data: { ...column } })
+  //use useSortable (abstraction is useDragtion and useDroption) to drag and drop item, need id to identify item (can add another data to use when get event of onDrapStart or onDrapEnd)
+  //use spread syntax ( data: { ...column }) to clone column data to  new json ofect named data
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: column._id, data: { ...column } })
 
   const dndKitColumnStyle = {
     touchAction: 'none',
+    //dung CSS.Translate. thay cho CSS.Transform để tránh column bị stretch (kéo dãn theo các column khác)
     transform: CSS.Translate.toString(transform),
-    transition
+    transition,
+    //heigt 100% tránh trường hợp lỗi khi kéo column ngắn qua column dài, kết hợp với listener trong box fix bug kéo bên dưới column (không kéo vào column) cũng kéo được (bug ở mobile)
+    height: '100%',
+    opacity: isDragging ? 0.5 : undefined
   }
   return (
-    <Box
-      ref={setNodeRef}
-      style={dndKitColumnStyle}
-      {...attributes}
-      {...listeners}
-      sx={{
-        minWidth: '300px',
-        maxWidth: '300px',
-        bgcolor: theme =>
-          theme.palette.mode === 'dark' ? '#333643' : '#ebecf0',
-        ml: 2,
-        borderRadius: '6px',
-        height: 'fit-content',
-        maxHeight: theme =>
-          `calc(${theme.jm.boardContentHeight} - ${theme.spacing(5)})`
-      }}
-    >
-      {/* Box column header */}
+    //bọc thẻ div ở ngoài tránh bug về chiều cao của column
+    <div ref={setNodeRef} style={dndKitColumnStyle} {...attributes}>
       <Box
+        {...listeners}
         sx={{
-          height: theme => theme.jm.columnHeaderHeight,
-          p: 2,
-          display: 'flex',
-          justifyContent: 'space-between'
+          minWidth: '300px',
+          maxWidth: '300px',
+          bgcolor: theme =>
+            theme.palette.mode === 'dark' ? '#333643' : '#ebecf0',
+          ml: 2,
+          borderRadius: '6px',
+          height: 'fit-content',
+          maxHeight: theme =>
+            `calc(${theme.jm.boardContentHeight} - ${theme.spacing(5)})`
         }}
       >
-        <Typography
-          variant='h6'
-          sx={{ fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}
+        {/* Box column header */}
+        <Box
+          sx={{
+            height: theme => theme.jm.columnHeaderHeight,
+            p: 2,
+            display: 'flex',
+            justifyContent: 'space-between'
+          }}
         >
-          {column?.title}
-        </Typography>
-        <Box>
-          <div>
-            <Tooltip title='More options'>
-              <ExpandMoreIcon
-                sx={{ color: 'text.main', cursor: 'pointer' }}
-                id='basic-button-column-dropdown'
-                aria-controls={open ? 'basic-menu-recent' : undefined}
-                aria-haspopup='true'
-                aria-expanded={open ? 'true' : undefined}
-                onClick={handleClick}
-              />
-            </Tooltip>
-            <Menu
-              id='basic-menu-recent'
-              anchorEl={anchorEl}
-              open={open}
-              onClose={handleClose}
-              MenuListProps={{
-                'aria-labelledby': 'basic-button-column-dropdown'
-              }}
-            >
-              <MenuItem>
-                <ListItemIcon>
-                  <AddCardIcon fontSize='small' />
-                </ListItemIcon>
-                <ListItemText>Add new card </ListItemText>
-              </MenuItem>
-              <MenuItem>
-                <ListItemIcon>
-                  <ContentCut fontSize='small' />
-                </ListItemIcon>
-                <ListItemText>Cut </ListItemText>
-              </MenuItem>
-              <MenuItem>
-                <ListItemIcon>
-                  <ContentCopy fontSize='small' />
-                </ListItemIcon>
-                <ListItemText>Copy</ListItemText>
-              </MenuItem>
-              <MenuItem>
-                <ListItemIcon>
-                  <ContentPaste fontSize='small' />
-                </ListItemIcon>
-                <ListItemText>Pase</ListItemText>
-              </MenuItem>
-              <Divider />
-              <MenuItem>
-                <ListItemIcon>
-                  <Cloud fontSize='small' />
-                </ListItemIcon>
-                <ListItemText>Archive this column</ListItemText>
-              </MenuItem>
-              <MenuItem>
-                <ListItemIcon>
-                  <DeleteForeverIcon fontSize='small' />
-                </ListItemIcon>
-                <ListItemText>Remove this column</ListItemText>
-              </MenuItem>
-            </Menu>
-          </div>
+          <Typography
+            variant='h6'
+            sx={{ fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}
+          >
+            {column?.title}
+          </Typography>
+          <Box>
+            <div>
+              <Tooltip title='More options'>
+                <ExpandMoreIcon
+                  sx={{ color: 'text.main', cursor: 'pointer' }}
+                  id='basic-button-column-dropdown'
+                  aria-controls={open ? 'basic-menu-recent' : undefined}
+                  aria-haspopup='true'
+                  aria-expanded={open ? 'true' : undefined}
+                  onClick={handleClick}
+                />
+              </Tooltip>
+              <Menu
+                id='basic-menu-recent'
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                MenuListProps={{
+                  'aria-labelledby': 'basic-button-column-dropdown'
+                }}
+              >
+                <MenuItem>
+                  <ListItemIcon>
+                    <AddCardIcon fontSize='small' />
+                  </ListItemIcon>
+                  <ListItemText>Add new card </ListItemText>
+                </MenuItem>
+                <MenuItem>
+                  <ListItemIcon>
+                    <ContentCut fontSize='small' />
+                  </ListItemIcon>
+                  <ListItemText>Cut </ListItemText>
+                </MenuItem>
+                <MenuItem>
+                  <ListItemIcon>
+                    <ContentCopy fontSize='small' />
+                  </ListItemIcon>
+                  <ListItemText>Copy</ListItemText>
+                </MenuItem>
+                <MenuItem>
+                  <ListItemIcon>
+                    <ContentPaste fontSize='small' />
+                  </ListItemIcon>
+                  <ListItemText>Pase</ListItemText>
+                </MenuItem>
+                <Divider />
+                <MenuItem>
+                  <ListItemIcon>
+                    <Cloud fontSize='small' />
+                  </ListItemIcon>
+                  <ListItemText>Archive this column</ListItemText>
+                </MenuItem>
+                <MenuItem>
+                  <ListItemIcon>
+                    <DeleteForeverIcon fontSize='small' />
+                  </ListItemIcon>
+                  <ListItemText>Remove this column</ListItemText>
+                </MenuItem>
+              </Menu>
+            </div>
+          </Box>
+        </Box>
+        {/* Box List card */}
+        <ListCards cards={orderedCard} />
+        {/* Box column Footer */}
+        <Box
+          sx={{
+            height: theme => theme.jm.columnFooterHeight,
+            p: 2,
+            display: 'flex',
+            justifyContent: 'space-between'
+          }}
+        >
+          <Button startIcon={<AddCardIcon />}>Add new card</Button>
+          <Tooltip title='Drag to move'>
+            <DragHandleIcon sx={{ cursor: 'pointer' }} />
+          </Tooltip>
         </Box>
       </Box>
-      {/* Box List card */}
-      <ListCards cards={orderedCard} />
-      {/* Box column Footer */}
-      <Box
-        sx={{
-          height: theme => theme.jm.columnFooterHeight,
-          p: 2,
-          display: 'flex',
-          justifyContent: 'space-between'
-        }}
-      >
-        <Button startIcon={<AddCardIcon />}>Add new card</Button>
-        <Tooltip title='Drag to move'>
-          <DragHandleIcon sx={{ cursor: 'pointer' }} />
-        </Tooltip>
-      </Box>
-    </Box>
+    </div>
   )
 }
 
