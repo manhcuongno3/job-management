@@ -1,12 +1,11 @@
 import Box from '@mui/system/Box'
 import ListColumns from './ListColumns/ListColumns'
-import { mapOrder } from '~/utils/sorts'
 import {
   DndContext,
   useSensor,
   useSensors,
-  TouchSensor,
-  MouseSensor,
+  // TouchSensor,
+  // MouseSensor,
   DragOverlay,
   defaultDropAnimationSideEffects,
   closestCorners,
@@ -15,18 +14,28 @@ import {
   getFirstCollision,
   closestCenter
 } from '@dnd-kit/core'
+import { MouseSensor, TouchSensor } from '~/customLib/DndKitSensors'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { arrayMove } from '@dnd-kit/sortable'
 import Column from './ListColumns/Column/Column'
 import Cards from './ListColumns/Column/ListCards/Card/Cards'
-import { cloneDeep } from 'lodash'
+import { cloneDeep, isEmpty } from 'lodash'
+import { generatePlaceHolderCard } from '~/utils/formartter'
 
 const ACTIVE_DRAG_ITEM_TYPE = {
   COLUMN: 'ACTIVE_DRAG_ITEM_TYPE_COLUMN',
   CARD: 'ACTIVE_DRAG_ITEM_TYPE_CARD'
 }
 
-function BoardContent ({ board }) {
+function BoardContent ({
+  board,
+  createNewColumn,
+  createNewCard,
+  moveColumn,
+  moveCardOnColumn,
+  moveCardToDifferentColumn,
+  delteCOlumnDetails
+}) {
   // const pointerSensor = useSensor(PointerSensor, {
   //   activationConstraint: { distance: 10 }
   // })
@@ -53,7 +62,7 @@ function BoardContent ({ board }) {
 
   //rerender (update column sortion) after drap and drop column
   useEffect(() => {
-    setOrderColumns(mapOrder(board?.columns, board?.columnOrderIds, '_id'))
+    setOrderColumns(board?.columns)
   }, [board])
 
   //use map funtion to check each card on orderedColumn, if id of that card include cardId (to find column) then return it.
@@ -99,7 +108,8 @@ function BoardContent ({ board }) {
     over,
     activeColumn,
     activeDragingCardId,
-    activeDragingCardData
+    activeDragingCardData,
+    triggerFrom
   ) => {
     setOrderColumns(preColumns => {
       //find destination over card index (where active card will drop)
@@ -131,7 +141,12 @@ function BoardContent ({ board }) {
         nextActiveColumn.cards = nextActiveColumn.cards.filter(
           card => card._id !== activeDragingCardId
         )
-        //update data
+
+        //add card have FE_PlaceHolderCard props if activeColumn is empty (use for whether drag card to this column)
+        if (isEmpty(nextActiveColumn?.cards)) {
+          nextActiveColumn.cards = [generatePlaceHolderCard(nextActiveColumn)]
+        }
+        //update cardOrderIds
         nextActiveColumn.cardOrderIds = nextActiveColumn.cards.map(
           card => card._id
         )
@@ -154,6 +169,21 @@ function BoardContent ({ board }) {
           columnId: nextOverColumn._id
         })
 
+        //delete card have FE_PlaceHolderCard prop if it exist
+        nextOverColumn.cards = nextOverColumn.cards.filter(
+          card => !card?.FE_PlaceHolderCard
+        )
+
+        //call Api if trigger is handleDragEnd
+        if (triggerFrom === 'handleDragEnd') {
+          moveCardToDifferentColumn(
+            activeDragingCardId,
+            oldColumnStartDragingCard._id,
+            nextOverColumn._id,
+            nextColumns
+          )
+        }
+
         nextOverColumn.cardOrderIds = nextOverColumn.cards.map(card => card._id)
       }
 
@@ -162,6 +192,7 @@ function BoardContent ({ board }) {
   }
 
   const handleDragOver = event => {
+    // console.log('activeDragItemType', activeDragItemType)
     //handle only card drag over
     if (activeDragItemType === ACTIVE_DRAG_ITEM_TYPE.COLUMN) return
 
@@ -192,7 +223,8 @@ function BoardContent ({ board }) {
         over,
         activeColumn,
         activeDragingCardId,
-        activeDragingCardData
+        activeDragingCardData,
+        'handleDragOver'
       )
     }
   }
@@ -223,7 +255,8 @@ function BoardContent ({ board }) {
           over,
           activeColumn,
           activeDragingCardId,
-          activeDragingCardData
+          activeDragingCardData,
+          'handleDragEnd'
         )
       }
       //drag drop on same column
@@ -242,6 +275,7 @@ function BoardContent ({ board }) {
           oldCardIndex,
           newCardIndex
         )
+
         setOrderColumns(preColumn => {
           const nextColumn = cloneDeep(preColumn)
           //find column which 'card is drop
@@ -254,6 +288,8 @@ function BoardContent ({ board }) {
 
           return nextColumn
         })
+
+        moveCardOnColumn(oldColumnStartDragingCard._id, dndOrderedCards)
       }
     }
 
@@ -271,8 +307,14 @@ function BoardContent ({ board }) {
         oldColumnIndex,
         newColumnIndex
       )
-      // const dndOrderedColumnsIds = dndOrderedColumns.map(c => c._id)
       setOrderColumns(dndOrderedColumns)
+
+      moveColumn(dndOrderedColumns)
+      // const dndOrderedColumnsIds = dndOrderedColumns.map(c => c._id)
+      //call API update orderColumnIds on dtbase
+      // updateOrderColumnIds(board._id, {
+      //   orderColumnIds: dndOrderedColumns.map(e => e._id)
+      // })
     }
     //set null for all dragdrop data when drop (prevent crash page)
     setActiveDragItemId(null)
@@ -342,7 +384,12 @@ function BoardContent ({ board }) {
           p: '10px 0'
         }}
       >
-        <ListColumns columns={orderedColumns} />
+        <ListColumns
+          columns={orderedColumns}
+          createNewColumn={createNewColumn}
+          createNewCard={createNewCard}
+          delteCOlumnDetails = {delteCOlumnDetails}
+        />
         <DragOverlay dropAnimation={customDropAnimation}>
           {!activeDragItemType && null}
           {activeDragItemType == ACTIVE_DRAG_ITEM_TYPE.COLUMN && (

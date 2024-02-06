@@ -6,7 +6,7 @@ import Divider from '@mui/material/Divider'
 import ListItemText from '@mui/material/ListItemText'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import React from 'react'
+import React, { useState } from 'react'
 import Tooltip from '@mui/material/Tooltip'
 import ContentCut from '@mui/icons-material/ContentCut'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
@@ -17,11 +17,14 @@ import AddCardIcon from '@mui/icons-material/AddCard'
 import Button from '@mui/material/Button'
 import DragHandleIcon from '@mui/icons-material/DragHandle'
 import ListCards from './ListCards/ListCards'
-import { mapOrder } from '~/utils/sorts'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import CloseIcon from '@mui/icons-material/Close'
+import TextField from '@mui/material/TextField'
+import { toast } from 'react-toastify'
+import { useConfirm } from 'material-ui-confirm'
 
-function Column ({ column }) {
+function Column ({ column, createNewCard, delteCOlumnDetails }) {
   const [anchorEl, setAnchorEl] = React.useState(null)
   const open = Boolean(anchorEl)
   const handleClick = event => {
@@ -31,7 +34,36 @@ function Column ({ column }) {
     setAnchorEl(null)
   }
 
-  const orderedCard = mapOrder(column?.cards, column?.cardOrderIds, '_id')
+  const [openNewCardForm, setOpenNewCardForm] = useState(false)
+
+  const toggleOpenNewCardForm = () => setOpenNewCardForm(!openNewCardForm)
+
+  const [newCardTitle, setNewCardTitle] = useState('')
+
+  const addNewCard = () => {
+    if (!newCardTitle) {
+      toast.error('Plsease enter Column title', { position: 'bottom-right' })
+      return
+    }
+    createNewCard({ title: newCardTitle, columnId: column._id })
+    toggleOpenNewCardForm()
+    setNewCardTitle('')
+  }
+
+  const confirmDeleteColumn = useConfirm()
+  const handleDeleteColumn = () => {
+    confirmDeleteColumn({
+      title: 'Delete column',
+      description:
+        'This action is permanently delete your card and its cards! Are you sure?'
+    })
+      .then(() => {
+        //
+        delteCOlumnDetails(column._id)
+      })
+      .catch(() => {})
+  }
+  const orderedCard = column?.cards
   //use useSortable (abstraction is useDragtion and useDroption) to drag and drop item, need id to identify item (can add another data to use when get event of onDrapStart or onDrapEnd)
   //use spread syntax ( data: { ...column }) to clone column data to  new json ofect named data
   const {
@@ -101,13 +133,22 @@ function Column ({ column }) {
                 anchorEl={anchorEl}
                 open={open}
                 onClose={handleClose}
+                onClick={handleClose}
                 MenuListProps={{
                   'aria-labelledby': 'basic-button-column-dropdown'
                 }}
               >
-                <MenuItem>
+                <MenuItem
+                  sx={{
+                    '&:hover': {
+                      color: 'success.light',
+                      '& .add-card-icon': { color: 'success.light' }
+                    }
+                  }}
+                  onClick={toggleOpenNewCardForm}
+                >
                   <ListItemIcon>
-                    <AddCardIcon fontSize='small' />
+                    <AddCardIcon className='add-card-icon' fontSize='small' />
                   </ListItemIcon>
                   <ListItemText>Add new card </ListItemText>
                 </MenuItem>
@@ -136,9 +177,20 @@ function Column ({ column }) {
                   </ListItemIcon>
                   <ListItemText>Archive this column</ListItemText>
                 </MenuItem>
-                <MenuItem>
+                <MenuItem
+                  sx={{
+                    '&:hover': {
+                      color: 'warning.dark',
+                      '& .delete-forever-icon': { color: 'warning.dark' }
+                    }
+                  }}
+                  onClick={handleDeleteColumn}
+                >
                   <ListItemIcon>
-                    <DeleteForeverIcon fontSize='small' />
+                    <DeleteForeverIcon
+                      className='delete-forever-icon'
+                      fontSize='small'
+                    />
                   </ListItemIcon>
                   <ListItemText>Remove this column</ListItemText>
                 </MenuItem>
@@ -152,15 +204,95 @@ function Column ({ column }) {
         <Box
           sx={{
             height: theme => theme.jm.columnFooterHeight,
-            p: 2,
-            display: 'flex',
-            justifyContent: 'space-between'
+            p: 2
           }}
         >
-          <Button startIcon={<AddCardIcon />}>Add new card</Button>
-          <Tooltip title='Drag to move'>
-            <DragHandleIcon sx={{ cursor: 'pointer' }} />
-          </Tooltip>
+          {!openNewCardForm ? (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                height: '100%',
+                justifyContent: 'space-between'
+              }}
+            >
+              <Button
+                onClick={toggleOpenNewCardForm}
+                startIcon={<AddCardIcon />}
+              >
+                Add new card
+              </Button>
+              <Tooltip title='Drag to move'>
+                <DragHandleIcon sx={{ cursor: 'pointer' }} />
+              </Tooltip>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                height: '100%',
+                gap: 1
+              }}
+            >
+              <TextField
+                label='Enter card title...'
+                type='text'
+                size='small'
+                variant='outlined'
+                autoFocus
+                data-no-dnd='true'
+                value={newCardTitle}
+                onChange={e => setNewCardTitle(e.target.value)}
+                sx={{
+                  '& label': { color: 'text.primary' },
+                  '& label.Mui-focused': {
+                    color: theme => theme.palette.primary.main
+                  },
+                  '& input': {
+                    color: theme => theme.palette.primary.main,
+                    bgcolor: theme =>
+                      theme.palette.mode === 'dark' ? '#333643' : 'white'
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: theme => theme.palette.primary.main
+                    },
+                    '&:hover fieldset': {
+                      borderColor: theme => theme.palette.primary.main
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: theme => theme.palette.primary.main
+                    }
+                  }
+                }}
+              />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Button
+                  onClick={addNewCard}
+                  variant='contained'
+                  color='success'
+                  size='small'
+                  sx={{
+                    boxShadow: 'none',
+                    border: '0.5px solid',
+                    borderColor: theme => theme.palette.success.main,
+                    '&:hover': { bgcolor: theme => theme.palette.success.main }
+                  }}
+                >
+                  Add
+                </Button>
+                <CloseIcon
+                  fontSize='small'
+                  sx={{
+                    color: theme => theme.palette.warning.light,
+                    cursor: 'pointer'
+                  }}
+                  onClick={toggleOpenNewCardForm}
+                />
+              </Box>
+            </Box>
+          )}
         </Box>
       </Box>
     </div>
