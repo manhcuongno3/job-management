@@ -13,9 +13,9 @@ import { CSS } from '@dnd-kit/utilities'
 function Cards ({ card }) {
   const shoudShowCardActions = () => {
     return (
-      !!card?.memberIds.lengths ||
-      !!card?.comments.length ||
-      !!card?.attachments.length
+      !!card?.memberIds?.lengths ||
+      !!card?.comments?.length ||
+      !!card?.attachments?.length
     )
   }
 
@@ -34,7 +34,6 @@ function Cards ({ card }) {
     transition,
     opacity: isDragging ? 0.5 : undefined,
     border: isDragging ? '1px solid #74b9ff' : undefined
-
   }
   return (
     <Card
@@ -45,7 +44,13 @@ function Cards ({ card }) {
       sx={{
         cursor: 'pointer',
         boxShadow: '0 1px 1px rgba(0,0,0,0.2)',
-        overflow: 'unset'
+        overflow: 'unset',
+        display: card?.FE_PlaceHolderCard ? 'none' : 'block',
+        border: '1px solid transparent',
+        '&:hover': { borderColor: theme => theme.palette.primary.main }
+        //another way
+        //overflow: card?.FE_PlaceHolderCard ? 'hidden' : 'unset'
+        //height: card?.FE_PlaceHolderCard ? '0px' : 'unset'
       }}
     >
       {card?.cover && (
